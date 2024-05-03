@@ -378,6 +378,9 @@ func (p *Program) eventLoop(model Model, cmds chan Cmd) (Model, error) {
 
 			case setWindowTitleMsg:
 				p.renderer.setWindowTitle(string(msg))
+
+			case windowSizeMsg:
+				p.checkResize()
 			}
 
 			// Process internal messages for the renderer.

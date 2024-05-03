@@ -94,11 +94,16 @@ type sequenceMsg []Cmd
 //
 // Every is analogous to Tick in the Elm Architecture.
 func Every(duration time.Duration, fn func(time.Time) Msg) Cmd {
+	n := time.Now()
+	d := n.Truncate(duration).Add(duration).Sub(n)
+	t := time.NewTimer(d)
 	return func() Msg {
-		n := time.Now()
-		d := n.Truncate(duration).Add(duration).Sub(n)
-		t := time.NewTimer(d)
-		return fn(<-t.C)
+		ts := <-t.C
+		t.Stop()
+		for len(t.C) > 0 {
+			<-t.C
+		}
+		return fn(ts)
 	}
 }
 
@@ -141,37 +146,14 @@ func Every(duration time.Duration, fn func(time.Time) Msg) Cmd {
 //	    return m, nil
 //	}
 func Tick(d time.Duration, fn func(time.Time) Msg) Cmd {
+	t := time.NewTimer(d)
 	return func() Msg {
-		t := time.NewTimer(d)
-		return fn(<-t.C)
-	}
-}
-
-// Sequentially produces a command that sequentially executes the given
-// commands.
-// The Msg returned is the first non-nil message returned by a Cmd.
-//
-//	func saveStateCmd() Msg {
-//	   if err := save(); err != nil {
-//	       return errMsg{err}
-//	   }
-//	   return nil
-//	}
-//
-//	cmd := Sequentially(saveStateCmd, Quit)
-//
-// Deprecated: use Sequence instead.
-func Sequentially(cmds ...Cmd) Cmd {
-	return func() Msg {
-		for _, cmd := range cmds {
-			if cmd == nil {
-				continue
-			}
-			if msg := cmd(); msg != nil {
-				return msg
-			}
+		ts := <-t.C
+		t.Stop()
+		for len(t.C) > 0 {
+			<-t.C
 		}
-		return nil
+		return fn(ts)
 	}
 }
 

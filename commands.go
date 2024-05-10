@@ -157,6 +157,34 @@ func Tick(d time.Duration, fn func(time.Time) Msg) Cmd {
 	}
 }
 
+// Sequentially produces a command that sequentially executes the given
+// commands.
+// The Msg returned is the first non-nil message returned by a Cmd.
+//
+//	func saveStateCmd() Msg {
+//	   if err := save(); err != nil {
+//	       return errMsg{err}
+//	   }
+//	   return nil
+//	}
+//
+//	cmd := Sequentially(saveStateCmd, Quit)
+//
+// Deprecated: use Sequence instead.
+func Sequentially(cmds ...Cmd) Cmd {
+	return func() Msg {
+		for _, cmd := range cmds {
+			if cmd == nil {
+				continue
+			}
+			if msg := cmd(); msg != nil {
+				return msg
+			}
+		}
+		return fn(ts)
+	}
+}
+
 // setWindowTitleMsg is an internal message used to set the window title.
 type setWindowTitleMsg string
 

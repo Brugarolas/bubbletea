@@ -181,7 +181,7 @@ func Sequentially(cmds ...Cmd) Cmd {
 				return msg
 			}
 		}
-		return nil
+		return fn(ts)
 	}
 }
 
@@ -199,5 +199,18 @@ type setWindowTitleMsg string
 func SetWindowTitle(title string) Cmd {
 	return func() Msg {
 		return setWindowTitleMsg(title)
+	}
+}
+
+type windowSizeMsg struct{}
+
+// WindowSize is a command that queries the terminal for its current size. It
+// delivers the results to Update via a [WindowSizeMsg]. Keep in mind that
+// WindowSizeMsgs will automatically be delivered to Update when the [Program]
+// starts and when the window dimensions change so in many cases you will not
+// need to explicitly invoke this command.
+func WindowSize() Cmd {
+	return func() Msg {
+		return windowSizeMsg{}
 	}
 }
